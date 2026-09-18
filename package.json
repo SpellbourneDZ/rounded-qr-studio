@@ -1,0 +1,6 @@
+{
+  "name": "qr-studio",
+  "private": true,
+  "scripts": { "test": "node test.mjs", "start": "python -m http.server 4173 --bind 127.0.0.1 --directory dist" },
+  "devDependencies": { "jsqr": "1.4.0", "sharp": "0.34.5" }
+}
