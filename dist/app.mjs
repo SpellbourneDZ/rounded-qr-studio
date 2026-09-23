@@ -4,6 +4,16 @@ const $ = id => document.getElementById(id);
 const modes = { single: { text: '', entries: [] }, batch: { text: '', entries: [] } };
 let mode = 'single';
 let busy = false;
+const floatingDownload = document.createElement('div');
+floatingDownload.className = 'floating-download';
+floatingDownload.setAttribute('aria-hidden', 'true');
+floatingDownload.innerHTML = 'Скачать <img src="assets/download.svg" width="18" height="18" alt="">';
+document.body.append(floatingDownload);
+function placeDownload(event) {
+  floatingDownload.style.setProperty('--cursor-x', `${event.clientX - 59}px`);
+  floatingDownload.style.setProperty('--cursor-y', `${event.clientY - 21}px`);
+}
+function hideDownload() { floatingDownload.classList.remove('visible'); }
 
 function current() { return modes[mode]; }
 function countLabel(count) {
@@ -22,6 +32,7 @@ function syncInput() {
 }
 function setMode(next) {
   if (busy || mode === next) return;
+  hideDownload();
   current().text = $('links').value;
   mode = next;
   const batch = mode === 'batch';
@@ -67,34 +78,41 @@ async function pngBlob(svg) {
   } finally { URL.revokeObjectURL(objectUrl); }
 }
 function makeTile(entry, index, batch) {
-  const tile = document.createElement('div');
+  const tile = document.createElement(batch ? 'button' : 'div');
   tile.className = 'qr-tile';
   tile.style.animationDelay = `${Math.min(index * 30, 300)}ms`;
   tile.innerHTML = entry.svg;
-  tile.firstElementChild.setAttribute('role', 'img');
-  tile.firstElementChild.setAttribute('aria-label', `QR-код для ${entry.url}`);
   if (batch) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'hover-download';
-    button.setAttribute('aria-label', `Скачать SVG для ${entry.url}`);
-    button.innerHTML = 'Скачать <img src="assets/download.svg" width="18" height="18" alt="">';
-    button.addEventListener('click', () => {
+    tile.type = 'button';
+    tile.setAttribute('aria-label', `Скачать SVG для ${entry.url}`);
+    tile.addEventListener('click', () => {
       save(svgBlob(entry.svg), entry.name);
       $('status').textContent = 'SVG подготовлен к скачиванию';
     });
-    tile.addEventListener('pointermove', event => {
-      const rect = tile.getBoundingClientRect();
-      const x = Math.max(0, Math.min(rect.width - 118, event.clientX - rect.left + 12));
-      const y = Math.max(0, Math.min(rect.height - 42, event.clientY - rect.top + 12));
-      button.style.setProperty('--hover-x', `${x}px`);
-      button.style.setProperty('--hover-y', `${y}px`);
+    tile.addEventListener('pointerenter', event => {
+      if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+      placeDownload(event);
+      floatingDownload.classList.add('visible');
     });
-    tile.append(button);
+    tile.addEventListener('pointermove', event => {
+      if (event.pointerType === 'mouse' || event.pointerType === 'pen') placeDownload(event);
+    });
+    tile.addEventListener('pointerleave', hideDownload);
+    tile.addEventListener('blur', hideDownload);
+    tile.addEventListener('focus', () => {
+      if (!tile.matches(':focus-visible')) return;
+      const rect = tile.getBoundingClientRect();
+      placeDownload({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 });
+      floatingDownload.classList.add('visible');
+    });
+  } else {
+    tile.firstElementChild.setAttribute('role', 'img');
+    tile.firstElementChild.setAttribute('aria-label', `QR-код для ${entry.url}`);
   }
   return tile;
 }
 function renderResults() {
+  hideDownload();
   const { entries } = current();
   const results = $('results');
   results.replaceChildren();
@@ -211,6 +229,8 @@ $('clear').addEventListener('click', () => {
 $('generator').addEventListener('submit', event => { event.preventDefault(); generate(); });
 $('download-png').addEventListener('click', () => download('png'));
 $('download-svg').addEventListener('click', () => download('svg'));
+$('results').addEventListener('scroll', hideDownload);
+window.addEventListener('blur', hideDownload);
 renderResults();
 
 if (document.modelContext?.registerTool) {
