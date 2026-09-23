@@ -20,7 +20,8 @@ export function parseLinks(text, batch) {
 }
 
 // Round only exposed corners, retaining full connections between neighbouring modules.
-export function createSvg(data) {
+export function createSvg(data, style = 'rounded', color = '#111111') {
+  if (!['rounded', 'classic', 'circular'].includes(style) || !/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error('Недопустимые настройки QR-кода');
   qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
   const qr = qrcode(0, 'M');
   qr.addData(data, 'Byte');
@@ -29,8 +30,18 @@ export function createSvg(data) {
   const finders = [[0, 0], [n - 7, 0], [0, n - 7]];
   const dark = (x, y) => x >= 0 && y >= 0 && x < n && y < n && qr.isDark(y, x);
   let paths = '';
+  let dots = '';
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    if (!dark(x, y) || finders.some(([fx, fy]) => x >= fx && x < fx + 7 && y >= fy && y < fy + 7)) continue;
+    if (!dark(x, y)) continue;
+    if (style === 'classic') {
+      paths += `M${x} ${y}h1v1h-1z`;
+      continue;
+    }
+    if (finders.some(([fx, fy]) => x >= fx && x < fx + 7 && y >= fy && y < fy + 7)) continue;
+    if (style === 'circular') {
+      dots += `<circle cx="${x + .5}" cy="${y + .5}" r=".6"/>`;
+      continue;
+    }
     const tl = !dark(x - 1, y) && !dark(x, y - 1) ? .32 : 0;
     const tr = !dark(x + 1, y) && !dark(x, y - 1) ? .32 : 0;
     const br = !dark(x + 1, y) && !dark(x, y + 1) ? .32 : 0;
@@ -38,8 +49,8 @@ export function createSvg(data) {
     paths += `M${x + tl} ${y}H${x + 1 - tr}Q${x + 1} ${y} ${x + 1} ${y + tr}V${y + 1 - br}Q${x + 1} ${y + 1} ${x + 1 - br} ${y + 1}H${x + bl}Q${x} ${y + 1} ${x} ${y + 1 - bl}V${y + tl}Q${x} ${y} ${x + tl} ${y}Z`;
   }
   const roundRect = (x, y, s, r) => `M${x + r} ${y}H${x + s - r}A${r} ${r} 0 0 1 ${x + s} ${y + r}V${y + s - r}A${r} ${r} 0 0 1 ${x + s - r} ${y + s}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + s - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
-  const eyes = finders.map(([x, y]) => `<path fill-rule="evenodd" d="${roundRect(x, y, 7, 2.35)}${roundRect(x + 1, y + 1, 5, 1.35)}"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" rx="0.8"/>`).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 ${n} ${n}" fill="#000000"><path d="${paths}"/>${eyes}</svg>`;
+  const eyes = style === 'classic' ? '' : finders.map(([x, y]) => `<path fill-rule="evenodd" d="${roundRect(x, y, 7, 2.35)}${roundRect(x + 1, y + 1, 5, 1.35)}"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" rx="0.8"/>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 ${n} ${n}" fill="${color}">${style === 'circular' ? dots : `<path d="${paths}"/>`}${eyes}</svg>`;
 }
 
 export function filename(url, index) {

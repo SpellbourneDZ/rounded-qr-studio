@@ -478,7 +478,7 @@ var qrcode = function() {
           qrHtml += ' width: ' + cellSize + 'px;';
           qrHtml += ' height: ' + cellSize + 'px;';
           qrHtml += ' background-color: ';
-          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += _this.isDark(r, c)? '#111111' : '#ffffff';
           qrHtml += ';';
           qrHtml += '"/>';
         }

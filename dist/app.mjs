@@ -4,6 +4,9 @@ const $ = id => document.getElementById(id);
 const modes = { single: { text: '', entries: [] }, batch: { text: '', entries: [] } };
 let mode = 'single';
 let busy = false;
+let settings = { style: 'rounded', color: '#111111' };
+let draftSettings = { ...settings };
+let settingsOpen = false;
 const floatingDownload = document.createElement('div');
 floatingDownload.className = 'floating-download';
 floatingDownload.setAttribute('aria-hidden', 'true');
@@ -25,6 +28,58 @@ function showDownloadDone() {
 }
 
 function current() { return modes[mode]; }
+function isLightColor(color) {
+  const [r, g, b] = [1, 3, 5].map(index => parseInt(color.slice(index, index + 2), 16));
+  return r * 299 + g * 587 + b * 114 > 180000;
+}
+function updateSettingsPreview() {
+  $('settings-panel').classList.toggle('light-code', isLightColor(draftSettings.color));
+  for (const option of document.querySelectorAll('.style-option')) {
+    const input = option.querySelector('input');
+    input.checked = input.value === draftSettings.style;
+    option.querySelector('.style-preview').innerHTML = createSvg('https://example.com', input.value, draftSettings.color);
+  }
+  for (const choice of document.querySelectorAll('.color-choice')) {
+    choice.setAttribute('aria-pressed', choice.dataset.color === draftSettings.color);
+  }
+  const custom = !['#111111', '#ffffff'].includes(draftSettings.color);
+  document.querySelector('.custom-color-choice').classList.toggle('selected', custom);
+  document.querySelector('.custom-color-choice').style.backgroundColor = custom ? draftSettings.color : '';
+}
+function closeSettings(apply) {
+  if (apply) {
+    settings = { ...draftSettings };
+    for (const state of Object.values(modes)) {
+      state.entries = state.entries.map(entry => ({ ...entry, svg: createSvg(entry.url, settings.style, settings.color) }));
+    }
+  }
+  settingsOpen = false;
+  $('settings-panel').hidden = true;
+  $('input-panel').hidden = false;
+  $('output').hidden = false;
+  $('input-group').classList.remove('settings-open');
+  document.querySelector('.mode-row').classList.remove('settings-active');
+  $('settings-toggle').setAttribute('aria-expanded', 'false');
+  $('settings-toggle').firstElementChild.src = 'assets/settings.svg';
+  $('single-tab').disabled = $('batch-tab').disabled = $('generate').disabled = false;
+  renderResults();
+  $('settings-toggle').focus();
+}
+function openSettings() {
+  if (busy) return;
+  settingsOpen = true;
+  draftSettings = { ...settings };
+  $('custom-color').value = draftSettings.color;
+  updateSettingsPreview();
+  $('settings-panel').hidden = false;
+  $('input-panel').hidden = true;
+  $('output').hidden = true;
+  $('input-group').classList.add('settings-open');
+  document.querySelector('.mode-row').classList.add('settings-active');
+  $('settings-toggle').setAttribute('aria-expanded', 'true');
+  $('settings-toggle').firstElementChild.src = 'assets/settings-active.svg';
+  $('single-tab').disabled = $('batch-tab').disabled = $('generate').disabled = true;
+}
 function countLabel(count) {
   return `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'QR-код' : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? 'QR-кода' : 'QR-кодов'}`;
 }
@@ -40,7 +95,7 @@ function syncInput() {
   clearMessage();
 }
 function setMode(next) {
-  if (busy || mode === next) return;
+  if (busy || settingsOpen || mode === next) return;
   hideDownload();
   current().text = $('links').value;
   mode = next;
@@ -136,6 +191,7 @@ function makeTile(entry, index, batch) {
 }
 function renderResults() {
   hideDownload();
+  $('output').classList.toggle('light-code', isLightColor(settings.color));
   const { entries } = current();
   const results = $('results');
   results.replaceChildren();
@@ -163,7 +219,7 @@ function renderResults() {
   $('download-svg').textContent = mode === 'batch' ? 'Скачать все SVG' : 'Скачать SVG';
 }
 async function generate() {
-  if (busy) return;
+  if (busy || settingsOpen) return;
   let urls;
   try { urls = parseLinks($('links').value, mode === 'batch'); }
   catch (error) {
@@ -179,7 +235,7 @@ async function generate() {
   try {
     const entries = [];
     for (let i = 0; i < urls.length; i++) {
-      entries.push({ url: urls[i], svg: createSvg(urls[i]), name: filename(urls[i], i) });
+      entries.push({ url: urls[i], svg: createSvg(urls[i], settings.style, settings.color), name: filename(urls[i], i) });
       if (i % 5 === 0) await new Promise(resolve => setTimeout(resolve, 0));
     }
     current().entries = entries;
@@ -218,6 +274,24 @@ async function download(format) {
 
 $('single-tab').addEventListener('click', () => setMode('single'));
 $('batch-tab').addEventListener('click', () => setMode('batch'));
+$('settings-toggle').addEventListener('click', () => settingsOpen ? closeSettings(false) : openSettings());
+$('settings-cancel').addEventListener('click', () => closeSettings(false));
+$('settings-save').addEventListener('click', () => closeSettings(true));
+document.querySelectorAll('input[name="qr-style"]').forEach(input => input.addEventListener('change', () => {
+  draftSettings.style = input.value;
+  updateSettingsPreview();
+}));
+document.querySelectorAll('.color-choice').forEach(choice => choice.addEventListener('click', () => {
+  draftSettings.color = choice.dataset.color;
+  updateSettingsPreview();
+}));
+$('custom-color').addEventListener('input', event => {
+  draftSettings.color = event.target.value;
+  updateSettingsPreview();
+});
+document.addEventListener('keydown', event => {
+  if (settingsOpen && event.key === 'Escape') closeSettings(false);
+});
 document.querySelector('.tabs').addEventListener('keydown', event => {
   if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
     event.preventDefault();
@@ -263,7 +337,7 @@ if (document.modelContext?.registerTool) {
       inputSchema: { type: 'object', properties: { links: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 100 } }, required: ['links'], additionalProperties: false },
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       async execute(input) {
-        if (busy) throw new Error('Генерация уже выполняется');
+        if (busy || settingsOpen) throw new Error('Завершите настройку QR-кода');
         if (!Array.isArray(input?.links) || input.links.some(link => typeof link !== 'string' || /[\r\n]/.test(link))) throw new Error('Ожидается список ссылок');
         parseLinks(input.links.join('\n'), true);
         setMode(input.links.length > 1 ? 'batch' : 'single');

@@ -18,13 +18,16 @@
       <p>Создавай красивые qr-коды удобно, быстро и бесплатно</p>
     </header>
     <form id="generator" novalidate>
-      <div class="input-group">
+      <div class="input-group" id="input-group">
         <div class="mode-row">
-          <div class="tabs" role="tablist" aria-label="Режим генерации">
-            <button type="button" id="single-tab" role="tab" aria-selected="true" aria-controls="input-panel">Одна ссылка</button>
-            <button type="button" id="batch-tab" role="tab" aria-selected="false" aria-controls="input-panel" tabindex="-1">Список ссылок</button>
+          <div class="mode-controls">
+            <div class="tabs" role="tablist" aria-label="Режим генерации">
+              <button type="button" id="single-tab" role="tab" aria-selected="true" aria-controls="input-panel">Одна ссылка</button>
+              <button type="button" id="batch-tab" role="tab" aria-selected="false" aria-controls="input-panel" tabindex="-1">Список ссылок</button>
+            </div>
+            <button type="button" id="settings-toggle" class="settings-button" aria-label="Настройки" aria-expanded="false" aria-controls="settings-panel"><img src="assets/settings.svg" width="24" height="24" alt=""></button>
           </div>
-          <button type="button" class="settings-button" aria-label="Настройки пока недоступны" title="Настройки пока недоступны" disabled><img src="assets/settings.svg" width="24" height="24" alt=""></button>
+          <button type="submit" id="generate" class="generate-button">Создать QR-код</button>
         </div>
         <div id="input-panel" class="entry-box" role="tabpanel" aria-labelledby="single-tab">
           <button type="button" id="paste" class="icon-button paste-button" aria-label="Вставить из буфера" title="Вставить из буфера"><img src="assets/paste.svg" width="24" height="24" alt=""></button>
@@ -33,11 +36,32 @@
           <textarea id="links" rows="1" spellcheck="false" autocomplete="off" aria-describedby="errors" placeholder="Вставьте ссылку"></textarea>
           <button type="button" id="clear" class="icon-button clear-button" aria-label="Очистить поле" title="Очистить поле" hidden><img src="assets/clear.svg" width="24" height="24" alt=""></button>
         </div>
+        <section id="settings-panel" class="settings-panel" aria-label="Настройки" hidden>
+          <fieldset class="settings-group">
+            <legend>Стиль QR-кода</legend>
+            <div class="style-options">
+              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="rounded" checked><span class="style-preview" aria-hidden="true"></span><span>Скругленный</span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
+              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="classic"><span class="style-preview" aria-hidden="true"></span><span>Классический</span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
+              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="circular"><span class="style-preview" aria-hidden="true"></span><span>Круглый</span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
+            </div>
+          </fieldset>
+          <fieldset class="settings-group">
+            <legend>Цвет</legend>
+            <div class="color-options" role="group" aria-label="Цвет QR-кода">
+              <button type="button" class="color-choice dark" data-color="#111111" aria-label="Тёмный" aria-pressed="true"></button>
+              <button type="button" class="color-choice white" data-color="#ffffff" aria-label="Белый" aria-pressed="false"></button>
+              <label class="custom-color-choice" title="Свой цвет"><img src="assets/plus.svg" width="24" height="24" alt=""><input id="custom-color" type="color" value="#111111" aria-label="Свой цвет"></label>
+            </div>
+          </fieldset>
+          <div class="settings-actions">
+            <button type="button" id="settings-cancel" class="secondary-button">Отмена</button>
+            <button type="button" id="settings-save" class="dark-button">Сохранить</button>
+          </div>
+        </section>
         <p id="errors" role="alert"></p>
       </div>
-      <button type="submit" id="generate" class="generate-button">Создать QR-код</button>
     </form>
-    <section class="output" aria-label="Созданные QR-коды">
+    <section class="output" id="output" aria-label="Созданные QR-коды">
       <div id="results" class="results empty-state"><p id="empty-message">Тут появится QR-код</p></div>
       <div class="output-actions" id="output-actions" hidden>
         <span id="result-count"></span>
