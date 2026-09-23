@@ -73,7 +73,7 @@ textarea::-webkit-scrollbar-track,.results::-webkit-scrollbar-track{background:t
 .floating-download.done{width:42px;background:#c3f467}
 .floating-download.done .download-label{opacity:0;transform:scale(.75)}
 .floating-download.done .download-check{opacity:1;transform:translate(-50%,-50%) scale(1);transition-delay:.12s}
-.output-actions{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-bottom:16px;animation:enter .3s ease both}
+.output-actions{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-top:16px;animation:enter .3s ease both}
 .output-actions #result-count{margin-right:auto;color:#7d7d7d;font-size:16px;line-height:24px;letter-spacing:-.48px}
 .download-buttons{display:flex;align-items:center;gap:8px}
 .secondary-button,.dark-button{height:40px;padding:0 16px;border:0;border-radius:12px;font-size:16px;letter-spacing:-.48px;line-height:16px;white-space:nowrap;transition:background .2s ease,transform .2s ease,box-shadow .2s ease}
