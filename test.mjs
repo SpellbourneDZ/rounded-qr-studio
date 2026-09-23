@@ -32,6 +32,7 @@ const white = createSvg(EXAMPLE, 'rounded', '#ffffff');
 const whiteImage = await sharp(Buffer.from(white)).resize(512, 512).flatten({ background: '#111111' }).extend({ top: 90, bottom: 90, left: 90, right: 90, background: '#111111' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 assert.equal(jsQR(new Uint8ClampedArray(whiteImage.data), whiteImage.info.width, whiteImage.info.height, { inversionAttempts: 'attemptBoth' })?.data, EXAMPLE, 'Decode white QR on dark background');
 assert.match(createSvg(EXAMPLE, 'classic', '#ff0088'), /fill="#ff0088"/);
+assert.match(createSvg(EXAMPLE, 'classic', '#ff008880'), /fill="#ff0088" fill-opacity="0.502"/);
 assert.throws(() => createSvg(EXAMPLE, 'rounded', 'red'));
 const unzipped = unzipSync(zipSync(files));
 assert.deepEqual(Object.keys(unzipped), Object.keys(files));

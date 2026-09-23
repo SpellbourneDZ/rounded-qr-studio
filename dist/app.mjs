@@ -1,4 +1,5 @@
 import { parseLinks, createSvg, filename } from './qr.mjs';
+import { mountKiboColorPicker } from './kibo-color-picker.mjs';
 
 const $ = id => document.getElementById(id);
 const modes = { single: { text: '', entries: [] }, batch: { text: '', entries: [] } };
@@ -28,23 +29,29 @@ function showDownloadDone() {
 }
 
 function current() { return modes[mode]; }
-function isLightColor(color) {
-  const [r, g, b] = [1, 3, 5].map(index => parseInt(color.slice(index, index + 2), 16));
-  return r * 299 + g * 587 + b * 114 > 180000;
-}
+const isCustomColor = color => !['#111111', '#ffffff'].includes(color.toLowerCase());
+const badgeLabel = color => color.toLowerCase() === '#ffffff' ? 'Белый' : 'Свой цвет';
 function updateSettingsPreview() {
-  $('settings-panel').classList.toggle('light-code', isLightColor(draftSettings.color));
   for (const option of document.querySelectorAll('.style-option')) {
     const input = option.querySelector('input');
     input.checked = input.value === draftSettings.style;
-    option.querySelector('.style-preview').innerHTML = createSvg('https://example.com', input.value, draftSettings.color);
+    const preview = option.querySelector('.style-preview');
+    if (!preview.firstElementChild) preview.innerHTML = createSvg('https://example.com', input.value);
+    const badge = option.querySelector('.color-badge');
+    badge.hidden = draftSettings.color.toLowerCase() === '#111111' || !input.checked;
+    badge.querySelector('.badge-swatch').style.backgroundColor = draftSettings.color;
+    badge.querySelector('.badge-label').textContent = badgeLabel(draftSettings.color);
   }
   for (const choice of document.querySelectorAll('.color-choice')) {
     choice.setAttribute('aria-pressed', choice.dataset.color === draftSettings.color);
   }
-  const custom = !['#111111', '#ffffff'].includes(draftSettings.color);
-  document.querySelector('.custom-color-choice').classList.toggle('selected', custom);
-  document.querySelector('.custom-color-choice').style.backgroundColor = custom ? draftSettings.color : '';
+  const custom = isCustomColor(draftSettings.color);
+  $('custom-color-toggle').classList.toggle('selected', custom);
+  $('custom-color-toggle').style.backgroundColor = custom ? draftSettings.color : '';
+}
+function hideColorPicker() {
+  $('color-picker').hidden = true;
+  $('custom-color-toggle').setAttribute('aria-expanded', 'false');
 }
 function closeSettings(apply) {
   if (apply) {
@@ -54,6 +61,7 @@ function closeSettings(apply) {
     }
   }
   settingsOpen = false;
+  hideColorPicker();
   $('settings-panel').hidden = true;
   $('input-panel').hidden = false;
   $('output').hidden = false;
@@ -69,7 +77,7 @@ function openSettings() {
   if (busy) return;
   settingsOpen = true;
   draftSettings = { ...settings };
-  $('custom-color').value = draftSettings.color;
+  colorPicker.setColor(draftSettings.color);
   updateSettingsPreview();
   $('settings-panel').hidden = false;
   $('input-panel').hidden = true;
@@ -145,7 +153,18 @@ function makeTile(entry, index, batch) {
   const tile = document.createElement(batch ? 'button' : 'div');
   tile.className = 'qr-tile';
   tile.style.animationDelay = `${Math.min(index * 30, 300)}ms`;
-  tile.innerHTML = entry.svg;
+  tile.innerHTML = settings.color.toLowerCase() === '#111111' ? entry.svg : entry.svg.replace(/fill="#[0-9a-fA-F]{6}"(?: fill-opacity="[^"]+")?/, 'fill="#111111"');
+  if (settings.color.toLowerCase() !== '#111111') {
+    const badge = document.createElement('span');
+    badge.className = 'color-badge result-color-badge';
+    const swatch = document.createElement('span');
+    swatch.className = 'badge-swatch';
+    swatch.style.backgroundColor = settings.color;
+    const label = document.createElement('span');
+    label.textContent = badgeLabel(settings.color);
+    badge.append(swatch, label);
+    tile.append(badge);
+  }
   if (batch) {
     tile.type = 'button';
     tile.setAttribute('aria-label', `Скачать SVG для ${entry.url}`);
@@ -191,7 +210,6 @@ function makeTile(entry, index, batch) {
 }
 function renderResults() {
   hideDownload();
-  $('output').classList.toggle('light-code', isLightColor(settings.color));
   const { entries } = current();
   const results = $('results');
   results.replaceChildren();
@@ -283,14 +301,27 @@ document.querySelectorAll('input[name="qr-style"]').forEach(input => input.addEv
 }));
 document.querySelectorAll('.color-choice').forEach(choice => choice.addEventListener('click', () => {
   draftSettings.color = choice.dataset.color;
+  hideColorPicker();
   updateSettingsPreview();
 }));
-$('custom-color').addEventListener('input', event => {
-  draftSettings.color = event.target.value;
+$('custom-color-toggle').addEventListener('click', () => {
+  const picker = $('color-picker');
+  colorPicker.setColor(draftSettings.color);
+  picker.hidden = !picker.hidden;
+  $('custom-color-toggle').setAttribute('aria-expanded', String(!picker.hidden));
+});
+const colorPicker = mountKiboColorPicker($('color-picker'), color => {
+  draftSettings.color = color;
   updateSettingsPreview();
 });
 document.addEventListener('keydown', event => {
-  if (settingsOpen && event.key === 'Escape') closeSettings(false);
+  if (settingsOpen && event.key === 'Escape') {
+    if (!$('color-picker').hidden) hideColorPicker();
+    else closeSettings(false);
+  }
+});
+document.addEventListener('click', event => {
+  if (!$('color-picker').hidden && !$('color-picker').contains(event.target) && !$('custom-color-toggle').contains(event.target)) hideColorPicker();
 });
 document.querySelector('.tabs').addEventListener('keydown', event => {
   if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {

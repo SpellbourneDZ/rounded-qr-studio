@@ -21,7 +21,7 @@ export function parseLinks(text, batch) {
 
 // Round only exposed corners, retaining full connections between neighbouring modules.
 export function createSvg(data, style = 'rounded', color = '#111111') {
-  if (!['rounded', 'classic', 'circular'].includes(style) || !/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error('Недопустимые настройки QR-кода');
+  if (!['rounded', 'classic', 'circular'].includes(style) || !/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(color)) throw new Error('Недопустимые настройки QR-кода');
   qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
   const qr = qrcode(0, 'M');
   qr.addData(data, 'Byte');
@@ -50,7 +50,8 @@ export function createSvg(data, style = 'rounded', color = '#111111') {
   }
   const roundRect = (x, y, s, r) => `M${x + r} ${y}H${x + s - r}A${r} ${r} 0 0 1 ${x + s} ${y + r}V${y + s - r}A${r} ${r} 0 0 1 ${x + s - r} ${y + s}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + s - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
   const eyes = style === 'classic' ? '' : finders.map(([x, y]) => `<path fill-rule="evenodd" d="${roundRect(x, y, 7, 2.35)}${roundRect(x + 1, y + 1, 5, 1.35)}"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" rx="0.8"/>`).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 ${n} ${n}" fill="${color}">${style === 'circular' ? dots : `<path d="${paths}"/>`}${eyes}</svg>`;
+  const opacity = color.length === 9 ? ` fill-opacity="${(parseInt(color.slice(7), 16) / 255).toFixed(3)}"` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 ${n} ${n}" fill="${color.slice(0, 7)}"${opacity}>${style === 'circular' ? dots : `<path d="${paths}"/>`}${eyes}</svg>`;
 }
 
 export function filename(url, index) {

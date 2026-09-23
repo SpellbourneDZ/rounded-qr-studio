@@ -40,9 +40,9 @@
           <fieldset class="settings-group">
             <legend>Стиль QR-кода</legend>
             <div class="style-options">
-              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="rounded" checked><span class="style-preview" aria-hidden="true"></span><span>Скругленный</span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
-              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="classic"><span class="style-preview" aria-hidden="true"></span><span>Классический</span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
-              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="circular"><span class="style-preview" aria-hidden="true"></span><span>Круглый</span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
+              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="rounded" checked><span class="style-preview" aria-hidden="true"></span><span>Скругленный</span><span class="color-badge" hidden><span class="badge-swatch"></span><span class="badge-label"></span></span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
+              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="classic"><span class="style-preview" aria-hidden="true"></span><span>Классический</span><span class="color-badge" hidden><span class="badge-swatch"></span><span class="badge-label"></span></span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
+              <label class="style-option"><input class="sr-only" type="radio" name="qr-style" value="circular"><span class="style-preview" aria-hidden="true"></span><span>Круглый</span><span class="color-badge" hidden><span class="badge-swatch"></span><span class="badge-label"></span></span><img class="selected-mark" src="assets/selected.svg" width="32" height="32" alt=""></label>
             </div>
           </fieldset>
           <fieldset class="settings-group">
@@ -50,8 +50,9 @@
             <div class="color-options" role="group" aria-label="Цвет QR-кода">
               <button type="button" class="color-choice dark" data-color="#111111" aria-label="Тёмный" aria-pressed="true"></button>
               <button type="button" class="color-choice white" data-color="#ffffff" aria-label="Белый" aria-pressed="false"></button>
-              <label class="custom-color-choice" title="Свой цвет"><img src="assets/plus.svg" width="24" height="24" alt=""><input id="custom-color" type="color" value="#111111" aria-label="Свой цвет"></label>
+              <button type="button" id="custom-color-toggle" class="custom-color-choice" aria-label="Свой цвет" aria-expanded="false" aria-controls="color-picker"><img src="assets/plus.svg" width="24" height="24" alt=""><span class="custom-color-indicator" aria-hidden="true"></span></button>
             </div>
+            <div id="color-picker" class="kibo-picker" hidden></div>
           </fieldset>
           <div class="settings-actions">
             <button type="button" id="settings-cancel" class="secondary-button">Отмена</button>
