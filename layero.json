@@ -1,0 +1,7 @@
+{
+  "$schema": "https://layero.ru/schema/layero-v2.json",
+  "framework": "generic",
+  "installCommand": "echo skip",
+  "buildCommand": "echo skip",
+  "outputDirectory": "dist"
+}
