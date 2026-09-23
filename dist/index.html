@@ -6,7 +6,7 @@
   <meta name="description" content="Создавайте скруглённые QR-коды по одной ссылке или списку. Скачивайте прозрачные PNG и SVG.">
   <title>QR Студио — генератор QR-кодов</title>
   <link rel="icon" type="image/png" href="assets/logo.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=edit-color-icon">
   <script src="vendor/qrcode.js" defer></script>
   <script src="vendor/fflate.js" defer></script>
   <script src="app.mjs" type="module"></script>
@@ -50,7 +50,7 @@
             <div class="color-options" role="group" aria-label="Цвет QR-кода">
               <button type="button" class="color-choice dark" data-color="#111111" aria-label="Тёмный" aria-pressed="true"></button>
               <button type="button" class="color-choice white" data-color="#ffffff" aria-label="Белый" aria-pressed="false"></button>
-              <button type="button" id="custom-color-toggle" class="custom-color-choice" aria-label="Свой цвет" aria-expanded="false" aria-controls="color-picker"><img src="assets/plus.svg" width="24" height="24" alt=""><span class="custom-color-indicator" aria-hidden="true"></span></button>
+              <button type="button" id="custom-color-toggle" class="custom-color-choice" aria-label="Свой цвет" aria-expanded="false" aria-controls="color-picker"><img src="assets/plus.svg" width="24" height="24" alt=""><span class="custom-color-indicator" aria-hidden="true"><img src="assets/edit-color.svg" width="12" height="12" alt=""></span></button>
             </div>
             <div id="color-picker" class="kibo-picker" hidden></div>
           </fieldset>
