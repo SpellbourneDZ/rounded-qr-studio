@@ -92,6 +92,7 @@ function makeTile(entry, index, batch) {
     tile.addEventListener('pointerenter', event => {
       if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
       placeDownload(event);
+      floatingDownload.getBoundingClientRect();
       floatingDownload.classList.add('visible');
     });
     tile.addEventListener('pointermove', event => {
@@ -103,6 +104,7 @@ function makeTile(entry, index, batch) {
       if (!tile.matches(':focus-visible')) return;
       const rect = tile.getBoundingClientRect();
       placeDownload({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 });
+      floatingDownload.getBoundingClientRect();
       floatingDownload.classList.add('visible');
     });
   } else {

@@ -61,10 +61,10 @@ textarea::-webkit-scrollbar-track,.results::-webkit-scrollbar-track{background:t
 .results.batch-result{height:400px;overflow:auto;scrollbar-width:thin;scrollbar-color:#dedede transparent}
 .qr-grid{display:grid;grid-template-columns:repeat(3,172px);justify-content:space-between;gap:40px;padding:47px}
 .qr-tile{position:relative;width:172px;height:172px;animation:tile-in .35s cubic-bezier(.2,.8,.2,1) both}
-.qr-tile:is(button){display:block;padding:0;border:0;background:none;cursor:pointer}
+.qr-tile:is(button){display:block;padding:0;border:0;background:none;cursor:none}
 .qr-tile svg{display:block;width:100%;height:100%}
 .floating-download{position:fixed;top:0;left:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:8px;width:118px;height:42px;border-radius:80px;background:#fff;color:#111;font-size:16px;font-weight:500;letter-spacing:-.48px;box-shadow:0 4px 12px #0000003d;opacity:0;transform:translate3d(var(--cursor-x,0px),var(--cursor-y,0px),0);pointer-events:none;transition:opacity .16s ease;will-change:transform}
-.floating-download.visible{opacity:1}
+.floating-download.visible{opacity:1;transition:opacity .16s ease,transform .07s ease-out}
 .floating-download img{width:18px;height:18px}
 .output-actions{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-top:16px;animation:enter .3s ease both}
 .output-actions #result-count{margin-right:auto;color:#7d7d7d;font-size:16px;line-height:24px;letter-spacing:-.48px}
