@@ -7,13 +7,22 @@ let busy = false;
 const floatingDownload = document.createElement('div');
 floatingDownload.className = 'floating-download';
 floatingDownload.setAttribute('aria-hidden', 'true');
-floatingDownload.innerHTML = 'Скачать <img src="assets/download.svg" width="18" height="18" alt="">';
+floatingDownload.innerHTML = '<span class="download-label">Скачать <img src="assets/download.svg" width="18" height="18" alt=""></span><img class="download-check" src="assets/check.svg" width="20" height="20" alt="">';
 document.body.append(floatingDownload);
+let downloadDoneTimer;
 function placeDownload(event) {
-  floatingDownload.style.setProperty('--cursor-x', `${event.clientX - 59}px`);
-  floatingDownload.style.setProperty('--cursor-y', `${event.clientY - 21}px`);
+  floatingDownload.style.setProperty('--cursor-x', `${event.clientX}px`);
+  floatingDownload.style.setProperty('--cursor-y', `${event.clientY}px`);
 }
-function hideDownload() { floatingDownload.classList.remove('visible'); }
+function hideDownload() {
+  clearTimeout(downloadDoneTimer);
+  floatingDownload.classList.remove('visible', 'done');
+}
+function showDownloadDone() {
+  clearTimeout(downloadDoneTimer);
+  floatingDownload.classList.add('done');
+  downloadDoneTimer = setTimeout(() => floatingDownload.classList.remove('done'), 1300);
+}
 
 function current() { return modes[mode]; }
 function countLabel(count) {
@@ -87,7 +96,8 @@ function makeTile(entry, index, batch) {
     tile.setAttribute('aria-label', `Скачать SVG для ${entry.url}`);
     tile.addEventListener('click', () => {
       save(svgBlob(entry.svg), entry.name);
-      $('status').textContent = 'SVG подготовлен к скачиванию';
+      if (floatingDownload.classList.contains('visible')) showDownloadDone();
+      $('status').textContent = '';
     });
     tile.addEventListener('pointerenter', event => {
       if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
@@ -99,7 +109,10 @@ function makeTile(entry, index, batch) {
       if (event.pointerType === 'mouse' || event.pointerType === 'pen') placeDownload(event);
     });
     tile.addEventListener('pointerleave', hideDownload);
-    tile.addEventListener('blur', hideDownload);
+    tile.addEventListener('pointercancel', hideDownload);
+    tile.addEventListener('blur', () => {
+      if (!document.querySelector('.batch-result .qr-tile:hover')) hideDownload();
+    });
     tile.addEventListener('focus', () => {
       if (!tile.matches(':focus-visible')) return;
       const rect = tile.getBoundingClientRect();
@@ -107,6 +120,14 @@ function makeTile(entry, index, batch) {
       floatingDownload.getBoundingClientRect();
       floatingDownload.classList.add('visible');
     });
+    const item = document.createElement('div');
+    item.className = 'qr-item';
+    const link = document.createElement('p');
+    link.className = 'qr-link';
+    link.textContent = entry.url;
+    link.title = entry.url;
+    item.append(tile, link);
+    return item;
   } else {
     tile.firstElementChild.setAttribute('role', 'img');
     tile.firstElementChild.setAttribute('aria-label', `QR-код для ${entry.url}`);
@@ -175,12 +196,12 @@ async function generate() {
 async function download(format) {
   const entries = current().entries;
   if (!entries.length) return;
+  $('status').textContent = '';
   try {
     if (entries.length === 1) {
       const entry = entries[0];
       save(format === 'svg' ? svgBlob(entry.svg) : await pngBlob(entry.svg), format === 'svg' ? entry.name : pngName(entry));
     } else {
-      $('status').textContent = `Подготавливаем ${entries.length} файлов…`;
       const files = {};
       for (const [index, entry] of entries.entries()) {
         files[format === 'svg' ? entry.name : pngName(entry)] = format === 'svg'
@@ -190,7 +211,6 @@ async function download(format) {
       }
       save(new Blob([fflate.zipSync(files)], { type: 'application/zip' }), `qr-studio-${format}.zip`);
     }
-    $('status').textContent = format.toUpperCase() + ' подготовлен к скачиванию';
   } catch {
     $('status').textContent = 'Не удалось подготовить файл. Попробуйте ещё раз.';
   }
