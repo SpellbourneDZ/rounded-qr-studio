@@ -1,126 +1,235 @@
-import { EXAMPLE, parseLinks, createSvg, filename } from './qr.mjs';
-const $ = id => document.getElementById(id);
-let batch = false;
-let entries = [];
-let busy = false;
-const drafts = { single: EXAMPLE, batch: '' };
+import { parseLinks, createSvg, filename } from './qr.mjs';
 
+const $ = id => document.getElementById(id);
+const modes = { single: { text: '', entries: [] }, batch: { text: '', entries: [] } };
+let mode = 'single';
+let busy = false;
+
+function current() { return modes[mode]; }
+function countLabel(count) {
+  return `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'QR-код' : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? 'QR-кода' : 'QR-кодов'}`;
+}
+function clearMessage() {
+  $('errors').textContent = '';
+  $('status').textContent = '';
+  $('input-panel').classList.remove('invalid');
+  $('links').removeAttribute('aria-invalid');
+}
+function syncInput() {
+  current().text = $('links').value;
+  $('clear').hidden = !current().text;
+  clearMessage();
+}
 function setMode(next) {
-  drafts[batch ? 'batch' : 'single'] = $('links').value;
-  batch = next;
-  $('links').value = drafts[batch ? 'batch' : 'single'];
-  $('links').rows = batch ? 6 : 3;
-  $('links').placeholder = batch ? 'https://example.com\nhttps://example.com/catalog\nhttps://example.com/contacts' : 'https://example.com';
-  $('input-label').textContent = batch ? 'Ссылки — по одной на строку' : 'Ссылка';
-  $('input-hint').textContent = batch ? 'До 100 ссылок за раз. Пустые строки пропускаются.' : 'Полный адрес, начиная с https://';
-  $('editor-title').textContent = batch ? 'Добавьте ссылки' : 'Добавьте ссылку';
-  $('generate').firstChild.textContent = batch ? 'Создать QR-коды ' : 'Создать QR-код ';
+  if (busy || mode === next) return;
+  current().text = $('links').value;
+  mode = next;
+  const batch = mode === 'batch';
+  $('links').value = current().text;
+  $('links').rows = batch ? 6 : 1;
+  $('links').placeholder = batch
+    ? 'Ссылки, по одной на строку, например:\nhttps://example.com\nhttps://example.com/catalog\nhttps://example.com/contacts'
+    : 'Вставьте ссылку';
+  $('input-label').textContent = batch ? 'Ссылки, по одной на строку' : 'Ссылка';
+  $('input-panel').classList.toggle('batch', batch);
+  $('input-panel').setAttribute('aria-labelledby', batch ? 'batch-tab' : 'single-tab');
+  $('generate').textContent = batch ? 'Создать QR-коды' : 'Создать QR-код';
   for (const [id, active] of [['single-tab', !batch], ['batch-tab', batch]]) {
     $(id).setAttribute('aria-selected', active);
     $(id).tabIndex = active ? 0 : -1;
   }
-  $('input-panel').setAttribute('aria-labelledby', batch ? 'batch-tab' : 'single-tab');
-  clearResults();
+  $('clear').hidden = !current().text;
+  clearMessage();
+  renderResults();
 }
-
-function clearResults() {
-  entries = [];
-  $('results').className = '';
-  $('results').replaceChildren();
-  const empty = document.createElement('p');
-  empty.className = 'empty';
-  empty.textContent = 'Добавьте ссылки и создайте QR-коды';
-  $('results').append(empty);
-  $('download-all').hidden = true;
-  $('result-count').textContent = '0 кодов';
-  $('errors').textContent = '';
-  $('status').textContent = '';
-  $('links').removeAttribute('aria-invalid');
-}
-
 function save(blob, name) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = name;
-  document.body.append(a); a.click(); a.remove();
+  a.href = url;
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
-
+function svgBlob(svg) { return new Blob([svg], { type: 'image/svg+xml' }); }
+function pngName(entry) { return entry.name.replace(/\.svg$/, '.png'); }
+async function pngBlob(svg) {
+  const objectUrl = URL.createObjectURL(svgBlob(svg));
+  try {
+    const image = new Image();
+    image.src = objectUrl;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1024;
+    canvas.getContext('2d').drawImage(image, 0, 0, 1024, 1024);
+    return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG')), 'image/png'));
+  } finally { URL.revokeObjectURL(objectUrl); }
+}
+function makeTile(entry, index, batch) {
+  const tile = document.createElement('div');
+  tile.className = 'qr-tile';
+  tile.style.animationDelay = `${Math.min(index * 30, 300)}ms`;
+  tile.innerHTML = entry.svg;
+  tile.firstElementChild.setAttribute('role', 'img');
+  tile.firstElementChild.setAttribute('aria-label', `QR-код для ${entry.url}`);
+  if (batch) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'hover-download';
+    button.setAttribute('aria-label', `Скачать SVG для ${entry.url}`);
+    button.innerHTML = 'Скачать <img src="assets/download.svg" width="18" height="18" alt="">';
+    button.addEventListener('click', () => {
+      save(svgBlob(entry.svg), entry.name);
+      $('status').textContent = 'SVG подготовлен к скачиванию';
+    });
+    tile.addEventListener('pointermove', event => {
+      const rect = tile.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width - 118, event.clientX - rect.left + 12));
+      const y = Math.max(0, Math.min(rect.height - 42, event.clientY - rect.top + 12));
+      button.style.setProperty('--hover-x', `${x}px`);
+      button.style.setProperty('--hover-y', `${y}px`);
+    });
+    tile.append(button);
+  }
+  return tile;
+}
+function renderResults() {
+  const { entries } = current();
+  const results = $('results');
+  results.replaceChildren();
+  results.className = 'results';
+  $('output-actions').hidden = entries.length === 0;
+  if (!entries.length) {
+    results.classList.add('empty-state');
+    const empty = document.createElement('p');
+    empty.textContent = mode === 'batch' ? 'Тут появятся QR-коды' : 'Тут появится QR-код';
+    results.append(empty);
+    return;
+  }
+  if (mode === 'single') {
+    results.classList.add('single-result');
+    results.append(makeTile(entries[0], 0, false));
+  } else {
+    results.classList.add('batch-result');
+    const grid = document.createElement('div');
+    grid.className = 'qr-grid';
+    for (const [index, entry] of entries.entries()) grid.append(makeTile(entry, index, true));
+    results.append(grid);
+  }
+  $('result-count').textContent = mode === 'batch' ? countLabel(entries.length) : '';
+  $('download-png').textContent = mode === 'batch' ? 'Скачать все PNG' : 'Скачать PNG';
+  $('download-svg').textContent = mode === 'batch' ? 'Скачать все SVG' : 'Скачать SVG';
+}
 async function generate() {
   if (busy) return;
   let urls;
-  try { urls = parseLinks($('links').value, batch); }
-  catch (error) { clearResults(); $('errors').textContent = error.message; $('links').setAttribute('aria-invalid', 'true'); return; }
-  clearResults();
+  try { urls = parseLinks($('links').value, mode === 'batch'); }
+  catch (error) {
+    $('errors').textContent = error.message;
+    $('input-panel').classList.add('invalid');
+    $('links').setAttribute('aria-invalid', 'true');
+    return;
+  }
+  clearMessage();
   busy = true;
-  for (const id of ['generate', 'links', 'single-tab', 'batch-tab', 'example']) $(id).disabled = true;
-  $('results').replaceChildren();
-  $('results').className = urls.length > 1 ? 'batch-results' : '';
-  $('results').setAttribute('aria-busy', 'true');
+  $('generate').disabled = true;
+  $('status').textContent = 'Создаём QR-коды…';
   try {
-    const next = [];
+    const entries = [];
     for (let i = 0; i < urls.length; i++) {
-      next.push({ url: urls[i], svg: createSvg(urls[i]), name: filename(urls[i], i) });
-      if (i % 5 === 0) { $('status').textContent = `Создаём: ${i + 1} из ${urls.length}…`; await new Promise(resolve => setTimeout(resolve, 0)); }
+      entries.push({ url: urls[i], svg: createSvg(urls[i]), name: filename(urls[i], i) });
+      if (i % 5 === 0) await new Promise(resolve => setTimeout(resolve, 0));
     }
-    entries = next;
-    for (const entry of entries) {
-      const card = document.createElement('article'); card.className = 'qr-card';
-      const stage = document.createElement('div'); stage.className = 'qr-stage'; stage.innerHTML = entry.svg;
-      stage.firstChild.setAttribute('role', 'img'); stage.firstChild.setAttribute('aria-label', `QR-код для ${entry.url}`);
-      const caption = document.createElement('div'); caption.className = 'qr-caption';
-      const url = document.createElement('span'); url.className = 'qr-link'; url.textContent = entry.url; url.title = entry.url;
-      const badge = document.createElement('span'); badge.className = 'svg-badge'; badge.textContent = 'SVG';
-      caption.append(url, badge);
-      const download = document.createElement('button'); download.type = 'button'; download.className = 'download'; download.innerHTML = 'Скачать SVG <span aria-hidden="true">↓</span>'; download.setAttribute('aria-label', `Скачать SVG для ${entry.url}`);
-      download.addEventListener('click', () => { save(new Blob([entry.svg], { type: 'image/svg+xml' }), entry.name); $('status').textContent = 'SVG подготовлен к скачиванию'; });
-      card.append(stage, caption, download); $('results').append(card);
-    }
-    const count = entries.length;
-    $('result-count').textContent = `${count} ${count % 10 === 1 && count % 100 !== 11 ? 'код' : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? 'кода' : 'кодов'}`;
-    $('preview-title').textContent = count > 1 ? 'Ваши QR-коды' : 'Ваш QR-код';
-    $('download-all').hidden = count < 2;
+    current().entries = entries;
+    renderResults();
     $('status').textContent = '';
-  } catch { clearResults(); $('errors').textContent = 'Не удалось создать QR-коды. Проверьте длину ссылок и повторите попытку.'; }
-  finally {
-    busy = false; $('results').removeAttribute('aria-busy');
-    for (const id of ['generate', 'links', 'single-tab', 'batch-tab', 'example']) $(id).disabled = false;
+  } catch {
+    $('errors').textContent = 'Не удалось создать QR-коды. Проверьте ссылки и повторите попытку.';
+    $('status').textContent = '';
+  } finally {
+    busy = false;
+    $('generate').disabled = false;
+  }
+}
+async function download(format) {
+  const entries = current().entries;
+  if (!entries.length) return;
+  try {
+    if (entries.length === 1) {
+      const entry = entries[0];
+      save(format === 'svg' ? svgBlob(entry.svg) : await pngBlob(entry.svg), format === 'svg' ? entry.name : pngName(entry));
+    } else {
+      $('status').textContent = `Подготавливаем ${entries.length} файлов…`;
+      const files = {};
+      for (const [index, entry] of entries.entries()) {
+        files[format === 'svg' ? entry.name : pngName(entry)] = format === 'svg'
+          ? fflate.strToU8(entry.svg)
+          : new Uint8Array(await (await pngBlob(entry.svg)).arrayBuffer());
+        if (index % 5 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+      }
+      save(new Blob([fflate.zipSync(files)], { type: 'application/zip' }), `qr-studio-${format}.zip`);
+    }
+    $('status').textContent = format.toUpperCase() + ' подготовлен к скачиванию';
+  } catch {
+    $('status').textContent = 'Не удалось подготовить файл. Попробуйте ещё раз.';
   }
 }
 
-$('single-tab').addEventListener('click', () => { if (batch) setMode(false); });
-$('batch-tab').addEventListener('click', () => { if (!batch) setMode(true); });
+$('single-tab').addEventListener('click', () => setMode('single'));
+$('batch-tab').addEventListener('click', () => setMode('batch'));
 document.querySelector('.tabs').addEventListener('keydown', event => {
   if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
-    event.preventDefault(); setMode(event.key === 'Home' ? false : event.key === 'End' ? true : !batch);
-    $(batch ? 'batch-tab' : 'single-tab').focus();
+    event.preventDefault();
+    setMode(event.key === 'Home' ? 'single' : event.key === 'End' ? 'batch' : mode === 'single' ? 'batch' : 'single');
+    $(mode === 'single' ? 'single-tab' : 'batch-tab').focus();
   }
 });
-$('generator').addEventListener('submit', event => { event.preventDefault(); generate(); });
-$('links').addEventListener('input', clearResults);
-$('example').addEventListener('click', () => { $('links').value = EXAMPLE; clearResults(); $('links').focus(); });
-$('download-all').addEventListener('click', () => {
-  try {
-    const files = Object.fromEntries(entries.map(entry => [entry.name, fflate.strToU8(entry.svg)]));
-    save(new Blob([fflate.zipSync(files)], { type: 'application/zip' }), 'qr-studio.zip');
-    $('status').textContent = `Архив с ${entries.length} SVG подготовлен к скачиванию`;
-  } catch { $('status').textContent = 'Не удалось создать архив. Попробуйте скачать SVG по отдельности.'; }
+$('links').addEventListener('input', syncInput);
+$('links').addEventListener('keydown', event => {
+  if (mode === 'single' && event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    generate();
+  }
 });
+$('paste').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) throw new Error('empty');
+    $('links').value = text;
+    syncInput();
+    $('links').focus();
+  } catch {
+    $('errors').textContent = 'Не удалось прочитать буфер обмена. Вставьте ссылку вручную.';
+  }
+});
+$('clear').addEventListener('click', () => {
+  $('links').value = '';
+  syncInput();
+  $('links').focus();
+});
+$('generator').addEventListener('submit', event => { event.preventDefault(); generate(); });
+$('download-png').addEventListener('click', () => download('png'));
+$('download-svg').addEventListener('click', () => download('svg'));
+renderResults();
 
-await generate();
 if (document.modelContext?.registerTool) {
   try {
     await document.modelContext.registerTool({
-      name: 'generate_qr_codes', description: 'Создать QR-коды из списка ссылок и показать SVG для скачивания. Не скачивает файлы автоматически.',
+      name: 'generate_qr_codes',
+      description: 'Создать QR-коды из списка ссылок и показать PNG/SVG для скачивания. Не скачивает файлы автоматически.',
       inputSchema: { type: 'object', properties: { links: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 100 } }, required: ['links'], additionalProperties: false },
       annotations: { readOnlyHint: false, untrustedContentHint: true },
       async execute(input) {
         if (busy) throw new Error('Генерация уже выполняется');
         if (!Array.isArray(input?.links) || input.links.some(link => typeof link !== 'string' || /[\r\n]/.test(link))) throw new Error('Ожидается список ссылок');
         parseLinks(input.links.join('\n'), true);
-        setMode(input.links.length > 1); $('links').value = input.links.join('\n'); await generate();
-        if (entries.length !== input.links.length) throw new Error('Не удалось создать все QR-коды');
-        return { count: entries.length, files: entries.map(entry => entry.name) };
+        setMode(input.links.length > 1 ? 'batch' : 'single');
+        $('links').value = input.links.join('\n');
+        syncInput();
+        await generate();
+        if (current().entries.length !== input.links.length) throw new Error('Не удалось создать все QR-коды');
+        return { count: current().entries.length, files: current().entries.map(entry => entry.name) };
       }
     });
   } catch (error) { console.warn('WebMCP недоступен', error); }

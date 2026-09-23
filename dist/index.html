@@ -2,45 +2,52 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Скруглённые QR-коды без фона и рамки. Генерация по одной ссылке или списку, экспорт в SVG.">
-  <title>QR Studio — генератор QR-кодов</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c3f467'/%3E%3Cpath d='M8 8h7v7H8zm10 0h6v7h-6zM8 18h7v6H8zm10 0h3v3h-3zm3 3h3v3h-3z' fill='%23191b18'/%3E%3C/svg%3E">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Создавайте скруглённые QR-коды по одной ссылке или списку. Скачивайте прозрачные PNG и SVG.">
+  <title>QR Студио — генератор QR-кодов</title>
+  <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="stylesheet" href="style.css">
   <script src="vendor/qrcode.js" defer></script>
   <script src="vendor/fflate.js" defer></script>
   <script src="app.mjs" type="module"></script>
 </head>
 <body>
-  <header><a class="brand" href="./" aria-label="QR Studio — главная"><span class="brand-icon" aria-hidden="true">▦</span> QR<span>STUDIO</span></a><span class="header-note">Ссылка. Код. Готово.</span></header>
-  <main>
-    <div class="intro"><div><p class="eyebrow">ИНСТРУМЕНТ ДЛЯ ВАШИХ ССЫЛОК</p><h1>QR-коды, ничего лишнего<span>.</span></h1><p class="subtitle">Скруглённые углы. Чёрный цвет. Прозрачный фон.</p></div><span class="format-tag">SVG <span>↗</span></span></div>
-    <div class="workspace">
-      <section class="editor" aria-labelledby="editor-title">
-        <div class="section-heading"><span class="step">01</span><h2 id="editor-title">Добавьте ссылку</h2></div>
-        <div class="tabs" role="tablist" aria-label="Режим генерации"><button id="single-tab" role="tab" aria-selected="true" aria-controls="input-panel">Одна ссылка</button><button id="batch-tab" role="tab" aria-selected="false" aria-controls="input-panel" tabindex="-1">Список ссылок <span class="tab-icon" aria-hidden="true">≡</span></button></div>
-        <form id="generator" novalidate>
-          <div id="input-panel" role="tabpanel" aria-labelledby="single-tab">
-            <label for="links" id="input-label">Ссылка</label>
-            <textarea id="links" rows="3" spellcheck="false" autocomplete="off" aria-describedby="input-hint errors" placeholder="https://example.com">https://chelyabinsk.mehotel.ru/merooms/</textarea>
-            <div class="input-meta"><span id="input-hint">Полный адрес, начиная с https://</span><button type="button" id="example">Пример</button></div>
+  <main class="app-shell">
+    <header class="masthead">
+      <div class="wordmark"><img src="assets/logo.png" width="48" height="48" alt=""><h1>QR Студио</h1></div>
+      <p>Создавай красивые qr-коды удобно, быстро и бесплатно</p>
+    </header>
+    <form id="generator" novalidate>
+      <div class="input-group">
+        <div class="mode-row">
+          <div class="tabs" role="tablist" aria-label="Режим генерации">
+            <button type="button" id="single-tab" role="tab" aria-selected="true" aria-controls="input-panel">Одна ссылка</button>
+            <button type="button" id="batch-tab" role="tab" aria-selected="false" aria-controls="input-panel" tabindex="-1">Список ссылок</button>
           </div>
-          <div id="errors" role="alert"></div>
-          <button class="primary" type="submit" id="generate">Создать QR-код <span aria-hidden="true">↗</span></button>
-        </form>
-        <div class="settings"><p class="eyebrow">СТИЛЬ ЭКСПОРТА</p><div class="setting"><span>Рисунок</span><strong><span class="mini-rounded" aria-hidden="true"></span>Скруглённый</strong></div><div class="setting"><span>Цвет</span><strong><span class="swatch" aria-hidden="true"></span>Чёрный <span class="hex">#000000</span></strong></div><div class="setting"><span>Фон и рамка</span><strong>Без фона и рамки</strong></div></div>
-        <p class="privacy"><span aria-hidden="true">⌁</span> Ссылки обрабатываются только в вашем браузере.</p>
-      </section>
-      <section class="results-panel" aria-labelledby="preview-title">
-        <div class="section-heading"><span class="step">02</span><h2 id="preview-title">Ваш QR-код</h2><span class="count" id="result-count">1 код</span></div>
-        <div id="results"></div>
-        <p id="status" class="status" role="status" aria-live="polite"></p>
-        <button type="button" id="download-all" class="download-all" hidden>Скачать все SVG <span>ZIP ↓</span></button>
-        <p class="preview-note">Шахматная подложка показывает прозрачность.<br>В скачанном файле её не будет.</p>
-      </section>
-    </div>
-    <footer><span>Готово для макетов и печати</span><span>SVG · Без потери качества</span></footer>
-    <p class="placement-note">При размещении QR-кода оставьте вокруг свободное светлое поле шириной не менее четырёх модулей — оно не добавляется в SVG.</p>
+          <button type="button" class="settings-button" aria-label="Настройки пока недоступны" title="Настройки пока недоступны" disabled><img src="assets/settings.svg" width="24" height="24" alt=""></button>
+        </div>
+        <div id="input-panel" class="entry-box" role="tabpanel" aria-labelledby="single-tab">
+          <button type="button" id="paste" class="icon-button paste-button" aria-label="Вставить из буфера" title="Вставить из буфера"><img src="assets/paste.svg" width="24" height="24" alt=""></button>
+          <span class="entry-divider" aria-hidden="true"></span>
+          <label for="links" class="sr-only" id="input-label">Ссылка</label>
+          <textarea id="links" rows="1" spellcheck="false" autocomplete="off" aria-describedby="errors" placeholder="Вставьте ссылку"></textarea>
+          <button type="button" id="clear" class="icon-button clear-button" aria-label="Очистить поле" title="Очистить поле" hidden><img src="assets/clear.svg" width="24" height="24" alt=""></button>
+        </div>
+        <p id="errors" role="alert"></p>
+      </div>
+      <button type="submit" id="generate" class="generate-button">Создать QR-код</button>
+    </form>
+    <section class="output" aria-label="Созданные QR-коды">
+      <div id="results" class="results empty-state"><p id="empty-message">Тут появится QR-код</p></div>
+      <div class="output-actions" id="output-actions" hidden>
+        <span id="result-count"></span>
+        <div class="download-buttons">
+          <button type="button" id="download-png" class="secondary-button">Скачать PNG</button>
+          <button type="button" id="download-svg" class="dark-button">Скачать SVG</button>
+        </div>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
   </main>
 </body>
 </html>
