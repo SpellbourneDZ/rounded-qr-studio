@@ -115,8 +115,6 @@ textarea::-webkit-scrollbar-track,.results::-webkit-scrollbar-track{background:t
 .qr-tile{position:relative;width:172px;height:172px;animation:tile-in .35s cubic-bezier(.2,.8,.2,1) both}
 .qr-tile:is(button){display:block;padding:0;border:0;background:none;cursor:none}
 .qr-tile svg{display:block;width:100%;height:100%}
-.result-color-badge{top:-32px;bottom:auto;z-index:1}
-.single-result .result-color-badge{top:auto;bottom:-32px}
 .qr-link{margin:10px 0 0;overflow:hidden;color:#7d7d7d;font-size:12px;line-height:14px;letter-spacing:-.36px;text-align:center;text-overflow:ellipsis;white-space:nowrap}
 .floating-download{position:fixed;top:0;left:0;z-index:10;display:flex;align-items:center;justify-content:center;width:118px;height:42px;overflow:hidden;border-radius:80px;background:#fff;color:#111;font-size:16px;font-weight:500;letter-spacing:-.48px;box-shadow:0 4px 12px #1111113d;opacity:0;transform:translate3d(calc(var(--cursor-x,0px) - 50%),calc(var(--cursor-y,0px) - 50%),0);pointer-events:none;transition:opacity .16s ease,width .34s cubic-bezier(.2,.8,.2,1),background .3s ease;will-change:transform}
 .floating-download.visible{opacity:1;transition:opacity .16s ease,transform .07s ease-out,width .34s cubic-bezier(.2,.8,.2,1),background .3s ease}
@@ -126,8 +124,10 @@ textarea::-webkit-scrollbar-track,.results::-webkit-scrollbar-track{background:t
 .floating-download.done{width:42px;background:#c3f467}
 .floating-download.done .download-label{opacity:0;transform:scale(.75)}
 .floating-download.done .download-check{opacity:1;transform:translate(-50%,-50%) scale(1);transition-delay:.12s}
-.output-actions{display:flex;align-items:center;justify-content:flex-end;gap:16px;margin-top:16px;animation:enter .3s ease both}
-.output-actions #result-count{margin-right:auto;color:#7d7d7d;font-size:16px;line-height:24px;letter-spacing:-.48px}
+.output-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;animation:enter .3s ease both}
+.result-summary{display:flex;align-items:center;gap:12px;min-width:0}
+.output-actions #result-count{color:#7d7d7d;font-size:16px;line-height:24px;letter-spacing:-.48px;white-space:nowrap}
+.summary-color-badge{position:static;flex:none;transform:none}
 .download-buttons{display:flex;align-items:center;gap:8px}
 .secondary-button,.dark-button{height:40px;padding:0 16px;border:0;border-radius:12px;font-size:16px;letter-spacing:-.48px;line-height:16px;white-space:nowrap;transition:background .2s ease,transform .2s ease,box-shadow .2s ease}
 .secondary-button{background:#f5f5f5;color:#111}
@@ -141,6 +141,6 @@ textarea::-webkit-scrollbar-track,.results::-webkit-scrollbar-track{background:t
 #status:not(:empty){margin-top:10px}
 @keyframes enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes tile-in{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
-@media(max-width:760px){.app-shell{margin-top:48px}.mode-row{flex-wrap:wrap}.mode-row .generate-button{margin-left:auto}.style-options{justify-content:start;gap:24px;overflow-x:auto;padding:12px 12px 8px;scroll-snap-type:x mandatory}.style-option{scroll-snap-align:start}.qr-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding:24px}.qr-item,.qr-tile{width:100%}.qr-tile{height:auto;aspect-ratio:1}.output-actions{flex-wrap:wrap}.output-actions #result-count{flex-basis:100%}}
+@media(max-width:760px){.app-shell{margin-top:48px}.mode-row{flex-wrap:wrap}.mode-row .generate-button{margin-left:auto}.style-options{justify-content:start;gap:24px;overflow-x:auto;padding:12px 12px 8px;scroll-snap-type:x mandatory}.style-option{scroll-snap-align:start}.qr-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding:24px}.qr-item,.qr-tile{width:100%}.qr-tile{height:auto;aspect-ratio:1}.output-actions{flex-wrap:wrap}.result-summary{flex-basis:100%}}
 @media(max-width:500px){h1{font-size:34px}.masthead p{font-size:16px}.qr-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tabs button{font-size:14px;padding:0 11px}.mode-row{gap:8px}.settings-panel{padding:20px}.download-buttons{width:100%}.download-buttons button{flex:1;font-size:14px}.batch textarea{white-space:pre-wrap;overflow-wrap:anywhere}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

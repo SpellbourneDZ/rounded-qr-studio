@@ -154,17 +154,6 @@ function makeTile(entry, index, batch) {
   tile.className = 'qr-tile';
   tile.style.animationDelay = `${Math.min(index * 30, 300)}ms`;
   tile.innerHTML = settings.color.toLowerCase() === '#111111' ? entry.svg : entry.svg.replace(/fill="#[0-9a-fA-F]{6}"(?: fill-opacity="[^"]+")?/, 'fill="#111111"');
-  if (settings.color.toLowerCase() !== '#111111') {
-    const badge = document.createElement('span');
-    badge.className = 'color-badge result-color-badge';
-    const swatch = document.createElement('span');
-    swatch.className = 'badge-swatch';
-    swatch.style.backgroundColor = settings.color;
-    const label = document.createElement('span');
-    label.textContent = badgeLabel(settings.color);
-    badge.append(swatch, label);
-    tile.append(badge);
-  }
   if (batch) {
     tile.type = 'button';
     tile.setAttribute('aria-label', `Скачать SVG для ${entry.url}`);
@@ -215,6 +204,12 @@ function renderResults() {
   results.replaceChildren();
   results.className = 'results';
   $('output-actions').hidden = entries.length === 0;
+  const badge = $('result-color-badge');
+  badge.hidden = !entries.length || settings.color.toLowerCase() === '#111111';
+  if (!badge.hidden) {
+    badge.querySelector('.badge-swatch').style.backgroundColor = settings.color;
+    badge.querySelector('.badge-label').textContent = badgeLabel(settings.color);
+  }
   if (!entries.length) {
     results.classList.add('empty-state');
     const empty = document.createElement('p');
@@ -232,7 +227,7 @@ function renderResults() {
     for (const [index, entry] of entries.entries()) grid.append(makeTile(entry, index, true));
     results.append(grid);
   }
-  $('result-count').textContent = mode === 'batch' ? countLabel(entries.length) : '';
+  $('result-count').textContent = countLabel(entries.length);
   $('download-png').textContent = mode === 'batch' ? 'Скачать все PNG' : 'Скачать PNG';
   $('download-svg').textContent = mode === 'batch' ? 'Скачать все SVG' : 'Скачать SVG';
 }
