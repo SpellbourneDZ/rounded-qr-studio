@@ -4,7 +4,7 @@
 
 **Создавайте QR-коды для ссылок прямо в браузере.** Выберите стиль и цвет, скачайте прозрачный PNG или SVG. Для списка ссылок генератор соберёт файлы в ZIP-архив.
 
-[Открыть QR Студио](https://qr-studio.layero.app) · [Сообщить об ошибке или предложить идею](https://github.com/SpellbourneDZ/rounded-qr-studio/issues)
+[Открыть QR Студио](https://studio-qr.ru) · [Сообщить об ошибке или предложить идею](https://github.com/SpellbourneDZ/rounded-qr-studio/issues)
 
 ![QR Студио: генератор QR-кодов](docs/preview.png)
 
@@ -19,7 +19,7 @@
 
 ## Как пользоваться
 
-1. [Откройте генератор](https://qr-studio.layero.app) и вставьте ссылку с `https://` или `http://`.
+1. [Откройте генератор](https://studio-qr.ru) и вставьте ссылку с `https://` или `http://`.
 2. Для нескольких ссылок выберите «Список ссылок» и разместите каждую ссылку на новой строке.
 3. При необходимости откройте «Настройки», выберите стиль и цвет, затем нажмите «Создать QR-код».
 4. Скачайте PNG или SVG. Для нескольких кодов кнопки «Скачать все» создают ZIP-архив.
@@ -55,4 +55,4 @@ npm test
 
 ---
 
-**English:** QR Studio is a free browser-based QR code generator with three styles, custom colors, transparent 1024 × 1024 PNG/SVG exports, and batch ZIP downloads for up to 100 links. Your links are processed in the browser. The interface is currently in Russian. [Try the live app](https://qr-studio.layero.app) or [run it locally](#запуск-локально).
+**English:** QR Studio is a free browser-based QR code generator with three styles, custom colors, transparent 1024 × 1024 PNG/SVG exports, and batch ZIP downloads for up to 100 links. Your links are processed in the browser. The interface is currently in Russian. [Try the live app](https://studio-qr.ru) or [run it locally](#запуск-локально).
